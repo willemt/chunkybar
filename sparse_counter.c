@@ -1,4 +1,3 @@
-#include <stdbool.h>
 #include <assert.h>
 #include <setjmp.h>
 #include <stdlib.h>
@@ -179,7 +178,7 @@ void sparsecounter_mark_complete(
     }
 }
 
-bool sparsecounter_is_complete(
+int sparsecounter_is_complete(
     sparsecounter_t * prog
 )
 {

@@ -13,7 +13,7 @@ int sparsecounter_get_num_blocks( sparsecounter_t * prog);
 
 void sparsecounter_mark_complete( sparsecounter_t * prog, const int offset, const int len);
 
-bool sparsecounter_is_complete( sparsecounter_t * prog);
+int sparsecounter_is_complete( sparsecounter_t * prog);
 
 void sparsecounter_get_incomplete( const sparsecounter_t * prog, int *offset, int *len, const int max);
 
