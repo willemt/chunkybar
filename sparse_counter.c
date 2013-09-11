@@ -178,6 +178,77 @@ void sparsecounter_mark_complete(
     }
 }
 
+void sparsecounter_mark_incomplete(
+    sparsecounter_t * prog,
+    const int offset,
+    const int len
+)
+{
+    var_block_t *this = NULL, *prev;
+
+    if (!prog->first_block)
+        return;
+
+    /* get 1st block that has a higher offset than us */
+
+    prev = NULL;
+    this = prog->first_block;
+
+    while (this)
+    {
+        /*  whole chunk gets eaten */
+        if (offset <= this->offset &&
+                this->offset + this->len <= offset + len)
+        {
+            if (prev)
+                prev->next = this->next;
+            else
+                prog->first_block = this->next;
+
+            free(this);
+        }
+        /*
+         * In the middle
+         * |00000LNL00000|
+         */
+        else if (this->offset <= offset &&
+                offset + len <= this->offset + this->len)
+        {
+            var_block_t *blk;
+
+            blk = malloc(sizeof(var_block_t));
+            blk->offset = offset + len;
+            blk->next = this->next;
+            blk->len = this->len - (offset+len);
+
+            this->next = blk;
+            this->len = offset - this->offset;
+        }
+        /*
+         * swallow left
+         * |00000NLL00000|
+         */
+        else if (this->offset < offset + len &&
+                offset + len < this->offset + this->len)
+        {
+            this->len -= offset+len - this->offset;
+            this->offset = offset+len;
+        }
+        /*
+         * swallow right
+         * |00000LLN00000|
+         */
+        else if (this->offset < offset &&
+                this->offset + this->len <= offset + len)
+        {
+            this->len = offset - this->offset;
+        }
+
+        prev = this;
+        this = this->next;
+    }
+}
+
 int sparsecounter_is_complete(
     sparsecounter_t * prog
 )
@@ -299,4 +370,17 @@ int sparsecounter_have(
     }
 
     return 0;
+}
+
+void sparsecounter_print_contents(sparsecounter_t * prog)
+{
+    const var_block_t *block;
+
+    block = prog->first_block;
+
+    while (block)
+    {
+        printf("%d to %d\n", block->offset, block->offset + block->len);
+        block = block->next;
+    }
 }
