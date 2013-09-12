@@ -269,7 +269,7 @@ void Testsparsecounter_GetIncomplete(
 
     prog = sparsecounter_init(100);
 
-    int len, offset;
+    unsigned int len, offset;
 
     sparsecounter_get_incomplete(prog, &offset, &len, 32);
 
@@ -286,7 +286,7 @@ void Testsparsecounter_GetIncomplete2(
 
     prog = sparsecounter_init(100);
 
-    int len, offset;
+    unsigned int len, offset;
 
     sparsecounter_mark_complete(prog, 0, 50);
 
@@ -307,7 +307,7 @@ void Testsparsecounter_GetIncomplete3(
 
     prog = sparsecounter_init(100);
 
-    int len, offset;
+    unsigned int len, offset;
 
     sparsecounter_mark_complete(prog, 25, 50);
 
@@ -328,7 +328,7 @@ void Testsparsecounter_GetIncomplete4(
 
     prog = sparsecounter_init(100);
 
-    int len, offset;
+    unsigned int len, offset;
 
     sparsecounter_mark_complete(prog, 25, 50);
     sparsecounter_mark_complete(prog, 0, 10);
@@ -366,7 +366,7 @@ void Testsparsecounter_GetIncompleteWithLenUnderBoundary(
 {
     void *prog = sparsecounter_init(100);
 
-    int len, offset;
+    unsigned int len, offset;
 
     sparsecounter_get_incomplete(prog, &offset, &len, 200);
     CuAssertTrue(tc, 100 == len);
@@ -440,6 +440,7 @@ void Testsparsecounter_unmark(
     sparsecounter_mark_incomplete(prog, 0, 100);
     CuAssertTrue(tc, !sparsecounter_is_complete(prog));
     CuAssertTrue(tc, !sparsecounter_have(prog,0,100));
+    CuAssertTrue(tc, 0 == sparsecounter_get_num_blocks(prog));
     sparsecounter_free(prog);
 }
 
@@ -463,6 +464,7 @@ void Testsparsecounter_unmark2(
     CuAssertTrue(tc, !sparsecounter_have(prog,20,10));
     CuAssertTrue(tc, !sparsecounter_have(prog,30,10));
     CuAssertTrue(tc, 0 == sparsecounter_get_nbytes_completed(prog));
+    CuAssertTrue(tc, 0 == sparsecounter_get_num_blocks(prog));
 
     sparsecounter_free(prog);
 }
@@ -481,6 +483,7 @@ void Testsparsecounter_unmark_swallow_left(
     CuAssertTrue(tc, !sparsecounter_have(prog,0,30));
     CuAssertTrue(tc, sparsecounter_have(prog,40,10));
     CuAssertTrue(tc, 10 == sparsecounter_get_nbytes_completed(prog));
+    CuAssertTrue(tc, 1 == sparsecounter_get_num_blocks(prog));
 
     sparsecounter_free(prog);
 }
@@ -499,6 +502,7 @@ void Testsparsecounter_unmark_swallow_right(
     CuAssertTrue(tc, !sparsecounter_have(prog,30,30));
     CuAssertTrue(tc, sparsecounter_have(prog,20,10));
     CuAssertTrue(tc, 10 == sparsecounter_get_nbytes_completed(prog));
+    CuAssertTrue(tc, 1 == sparsecounter_get_num_blocks(prog));
 
     sparsecounter_free(prog);
 }
@@ -520,7 +524,49 @@ void Testsparsecounter_unmarkHalves(
     CuAssertTrue(tc, !sparsecounter_have(prog,25,50));
     CuAssertTrue(tc, sparsecounter_have(prog,75,25));
     CuAssertTrue(tc, 50 == sparsecounter_get_nbytes_completed(prog));
+    CuAssertTrue(tc, 2 == sparsecounter_get_num_blocks(prog));
 
     sparsecounter_free(prog);
 }
 
+void Testsparsecounter_dontUnmarkHalvesAtEdge(
+    CuTest * tc
+)
+{
+    void *prog;
+
+    prog = sparsecounter_init(100);
+
+    sparsecounter_mark_complete(prog, 0, 100);
+    CuAssertTrue(tc, sparsecounter_is_complete(prog));
+    sparsecounter_mark_incomplete(prog, 50, 50);
+
+    CuAssertTrue(tc, !sparsecounter_is_complete(prog));
+    CuAssertTrue(tc, sparsecounter_have(prog,0,50));
+    CuAssertTrue(tc, !sparsecounter_have(prog,50,50));
+    CuAssertTrue(tc, 50 == sparsecounter_get_nbytes_completed(prog));
+    CuAssertTrue(tc, 1 == sparsecounter_get_num_blocks(prog));
+
+    sparsecounter_free(prog);
+}
+
+void Testsparsecounter_dontUnmark3(
+    CuTest * tc
+)
+{
+    void *prog;
+
+    prog = sparsecounter_init(262144);
+
+    sparsecounter_mark_complete(prog, 0, 49152);
+    sparsecounter_mark_complete(prog, 65536,196608);
+    sparsecounter_mark_incomplete(prog, 114688, 16384);
+
+    CuAssertTrue(tc, sparsecounter_have(prog,0,49152));
+    CuAssertTrue(tc, sparsecounter_have(prog,65536,49152));
+    CuAssertTrue(tc, !sparsecounter_have(prog,114688, 16384));
+    CuAssertTrue(tc, sparsecounter_have(prog,131072,131072));
+    CuAssertTrue(tc, 3 == sparsecounter_get_num_blocks(prog));
+
+    sparsecounter_free(prog);
+}

@@ -11,14 +11,14 @@ typedef struct var_block_s var_block_t;
 
 struct var_block_s
 {
-    int offset;
-    int len;
+    unsigned int offset;
+    unsigned int len;
     var_block_t *next;
 };
 
-static int __capmax(
-    int val,
-    int max
+static unsigned int __capmax(
+    unsigned int val,
+    unsigned int max
 )
 {
     if (max < val)
@@ -32,7 +32,7 @@ static int __capmax(
 }
 
 void *sparsecounter_init(
-    const int max
+    const unsigned int max
 )
 {
     sparsecounter_t *prog;
@@ -85,8 +85,8 @@ int sparsecounter_get_num_blocks(
  * mark this block as complete */
 void sparsecounter_mark_complete(
     sparsecounter_t * prog,
-    const int offset,
-    const int len
+    const unsigned int offset,
+    const unsigned int len
 )
 {
     var_block_t *this = NULL, *prev;
@@ -180,8 +180,8 @@ void sparsecounter_mark_complete(
 
 void sparsecounter_mark_incomplete(
     sparsecounter_t * prog,
-    const int offset,
-    const int len
+    const unsigned int offset,
+    const unsigned int len
 )
 {
     var_block_t *this = NULL, *prev;
@@ -201,28 +201,35 @@ void sparsecounter_mark_incomplete(
                 this->offset + this->len <= offset + len)
         {
             if (prev)
+            {
                 prev->next = this->next;
+                free(this);
+                this = prev;
+            }
             else
+            {
                 prog->first_block = this->next;
-
-            free(this);
+                free(this);
+                this = prog->first_block;
+                if (!this) break;
+            }
         }
         /*
          * In the middle
          * |00000LNL00000|
          */
-        else if (this->offset <= offset &&
-                offset + len <= this->offset + this->len)
+        else if (this->offset < offset &&
+                offset + len < this->offset + this->len)
         {
             var_block_t *blk;
 
             blk = malloc(sizeof(var_block_t));
             blk->offset = offset + len;
+            blk->len = this->len - len - (offset - this->offset);
             blk->next = this->next;
-            blk->len = this->len - (offset+len);
 
-            this->next = blk;
             this->len = offset - this->offset;
+            this->next = blk;
         }
         /*
          * swallow left
@@ -239,6 +246,7 @@ void sparsecounter_mark_incomplete(
          * |00000LLN00000|
          */
         else if (this->offset < offset &&
+                offset < this->offset + this->len &&
                 this->offset + this->len <= offset + len)
         {
             this->len = offset - this->offset;
@@ -264,9 +272,9 @@ int sparsecounter_is_complete(
  * Get an incompleted block  */
 void sparsecounter_get_incomplete(
     const sparsecounter_t * prog,
-    int *offset,
-    int *len,
-    const int max
+    unsigned int *offset,
+    unsigned int *len,
+    const unsigned int max
 )
 {
     const var_block_t *block;
@@ -317,7 +325,7 @@ void sparsecounter_get_incomplete(
     }
 }
 
-int sparsecounter_get_nbytes_completed(
+unsigned int sparsecounter_get_nbytes_completed(
     const sparsecounter_t * prog
 )
 {
@@ -325,7 +333,7 @@ int sparsecounter_get_nbytes_completed(
 
     block = prog->first_block;
 
-    int nbytes = 0;
+    unsigned int nbytes = 0;
 
     while (block)
     {
@@ -340,8 +348,8 @@ int sparsecounter_get_nbytes_completed(
  * @return 1 if we have this block, 0 otherwise */
 int sparsecounter_have(
     sparsecounter_t * prog,
-    const int offset,
-    const int len
+    const unsigned int offset,
+    const unsigned int len
 )
 {
     const var_block_t *block;
