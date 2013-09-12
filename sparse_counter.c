@@ -31,9 +31,10 @@ static unsigned int __capmax(
     }
 }
 
-void *sparsecounter_init(
-    const unsigned int max
-)
+/**
+ * @param max The amount we are expecting to count to
+ * @return initialised counter */
+void *sparsecounter_init(const unsigned int max)
 {
     sparsecounter_t *prog;
 
@@ -71,18 +72,13 @@ int sparsecounter_get_num_blocks(
     var_block_t *block;
     int num;
 
-    block = prog->first_block;
-
-    for (num = 0; block; num++)
-    {
-        block = block->next;
-    }
+    for (num=0, block = prog->first_block; block; num++, block = block->next);
 
     return num;
 }
 
 /**
- * mark this block as complete */
+ * Mark this block as complete */
 void sparsecounter_mark_complete(
     sparsecounter_t * prog,
     const unsigned int offset,
@@ -91,6 +87,7 @@ void sparsecounter_mark_complete(
 {
     var_block_t *this = NULL, *prev;
 
+    /* initialise first block */
     if (!prog->first_block)
     {
         var_block_t *block;
@@ -106,6 +103,7 @@ void sparsecounter_mark_complete(
 
     prev = prog->first_block;
 
+    /* we are at the beginning of the blocks */
     if (offset < prev->offset)
     {
         var_block_t *block;
@@ -156,7 +154,6 @@ void sparsecounter_mark_complete(
             prev->next = blk;
             prev = blk;
         }
-
     }
 
     /* prev will feast! */
