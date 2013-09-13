@@ -34,7 +34,7 @@ static unsigned int __capmax(
 /**
  * @param max The amount we are expecting to count to
  * @return initialised counter */
-void *sparsecounter_init(const unsigned int max)
+void *sc_init(const unsigned int max)
 {
     sparsecounter_t *prog;
 
@@ -44,7 +44,7 @@ void *sparsecounter_init(const unsigned int max)
     return prog;
 }
 
-void sparsecounter_free(
+void sc_free(
     void *ra
 )
 {
@@ -65,7 +65,7 @@ void sparsecounter_free(
 
 /**
  * @return number of non-contiginous blocks */
-int sparsecounter_get_num_blocks(
+int sc_get_num_blocks(
     sparsecounter_t * prog
 )
 {
@@ -79,7 +79,7 @@ int sparsecounter_get_num_blocks(
 
 /**
  * Mark this block as complete */
-void sparsecounter_mark_complete(
+void sc_mark_complete(
     sparsecounter_t * prog,
     const unsigned int offset,
     const unsigned int len
@@ -175,7 +175,7 @@ void sparsecounter_mark_complete(
     }
 }
 
-void sparsecounter_mark_incomplete(
+void sc_mark_incomplete(
     sparsecounter_t * prog,
     const unsigned int offset,
     const unsigned int len
@@ -254,7 +254,7 @@ void sparsecounter_mark_incomplete(
     }
 }
 
-int sparsecounter_is_complete(
+int sc_is_complete(
     sparsecounter_t * prog
 )
 {
@@ -267,7 +267,7 @@ int sparsecounter_is_complete(
 
 /**
  * Get an incompleted block  */
-void sparsecounter_get_incomplete(
+void sc_get_incomplete(
     const sparsecounter_t * prog,
     unsigned int *offset,
     unsigned int *len,
@@ -322,7 +322,7 @@ void sparsecounter_get_incomplete(
     }
 }
 
-unsigned int sparsecounter_get_nbytes_completed(
+unsigned int sc_get_nbytes_completed(
     const sparsecounter_t * prog
 )
 {
@@ -343,7 +343,7 @@ unsigned int sparsecounter_get_nbytes_completed(
 
 /**
  * @return 1 if we have this block, 0 otherwise */
-int sparsecounter_have(
+int sc_have(
     sparsecounter_t * prog,
     const unsigned int offset,
     const unsigned int len
@@ -377,7 +377,7 @@ int sparsecounter_have(
     return 0;
 }
 
-void sparsecounter_print_contents(sparsecounter_t * prog)
+void sc_print_contents(sparsecounter_t * prog)
 {
     const var_block_t *block;
 
