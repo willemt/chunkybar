@@ -213,7 +213,7 @@ void sc_mark_incomplete(
         }
         /*
          * In the middle
-         * |00000LNL00000|
+         * |00000LXL00000|
          */
         else if (this->offset < offset &&
                 offset + len < this->offset + this->len)
@@ -230,7 +230,7 @@ void sc_mark_incomplete(
         }
         /*
          * swallow left
-         * |00000NLL00000|
+         * |00000XLL00000|
          */
         else if (this->offset < offset + len &&
                 offset + len < this->offset + this->len)
@@ -240,7 +240,7 @@ void sc_mark_incomplete(
         }
         /*
          * swallow right
-         * |00000LLN00000|
+         * |00000LLX00000|
          */
         else if (this->offset < offset &&
                 offset < this->offset + this->len &&
