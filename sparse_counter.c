@@ -36,43 +36,41 @@ static unsigned int __capmax(
  * @return initialised counter */
 void *sc_init(const unsigned int max)
 {
-    sparsecounter_t *prog;
+    sparsecounter_t *me;
 
-    prog = calloc(1, sizeof(sparsecounter_t));
-    prog->max = max;
-    prog->first_block = NULL;
-    return prog;
+    me = calloc(1, sizeof(sparsecounter_t));
+    me->max = max;
+    me->first_block = NULL;
+    return me;
 }
 
 void sc_free(
     void *ra
 )
 {
-    sparsecounter_t *prog = ra;
-    var_block_t *blk, *prev;
+    sparsecounter_t *me = ra;
+    var_block_t *b, *prev;
 
-    blk = prog->first_block;
+    b = me->first_block;
 
-    while (blk)
+    while (b)
     {
-        prev = blk;
-        blk = blk->next;
+        prev = b;
+        b = b->next;
         free(prev);
     }
 
-    free(prog);
+    free(me);
 }
 
 /**
  * @return number of non-contiginous blocks */
-int sc_get_num_blocks(
-    sparsecounter_t * prog
-)
+int sc_get_num_blocks(const sparsecounter_t * me)
 {
-    var_block_t *block;
+    const var_block_t *b;
     int num;
 
-    for (num=0, block = prog->first_block; block; num++, block = block->next);
+    for (num=0, b = me->first_block; b; num++, b = b->next);
 
     return num;
 }
@@ -80,7 +78,7 @@ int sc_get_num_blocks(
 /**
  * Mark this block as complete */
 void sc_mark_complete(
-    sparsecounter_t * prog,
+    sparsecounter_t * me,
     const unsigned int offset,
     const unsigned int len
 )
@@ -88,31 +86,37 @@ void sc_mark_complete(
     var_block_t *this = NULL, *prev;
 
     /* initialise first block */
-    if (!prog->first_block)
+    if (!me->first_block)
     {
-        var_block_t *block;
+        var_block_t *b;
 
-        block = prog->first_block = malloc(sizeof(var_block_t));
-        block->len = len;
-        block->offset = offset;
-        block->next = NULL;
+        b = malloc(sizeof(var_block_t));
+        b->len = len;
+        b->offset = offset;
+        b->next = NULL;
+
+        /* set the node in one moment */
+        me->first_block = b;
         return;
     }
 
     /* get 1st block that has a higher offset than us */
 
-    prev = prog->first_block;
+    prev = me->first_block;
 
     /* we are at the beginning of the blocks */
     if (offset < prev->offset)
     {
-        var_block_t *block;
+        var_block_t *b;
 
-        block = prog->first_block = malloc(sizeof(var_block_t));
-        block->len = len;
-        block->offset = offset;
-        block->next = this = prev;
-        prev = block;
+        b = malloc(sizeof(var_block_t));
+        b->len = len;
+        b->offset = offset;
+        b->next = this = prev;
+        prev = b;
+
+        /* set the node in one moment */
+        me->first_block = b;
     }
     else
     {
@@ -145,14 +149,14 @@ void sc_mark_complete(
         }
         else
         {
-            var_block_t *blk;
+            var_block_t *b;
 
-            blk = malloc(sizeof(var_block_t));
-            blk->offset = offset;
-            blk->len = len;
-            blk->next = this;
-            prev->next = blk;
-            prev = blk;
+            b = malloc(sizeof(var_block_t));
+            b->offset = offset;
+            b->len = len;
+            b->next = this;
+            prev->next = b;
+            prev = b;
         }
     }
 
@@ -176,20 +180,20 @@ void sc_mark_complete(
 }
 
 void sc_mark_incomplete(
-    sparsecounter_t * prog,
+    sparsecounter_t * me,
     const unsigned int offset,
     const unsigned int len
 )
 {
     var_block_t *this = NULL, *prev;
 
-    if (!prog->first_block)
+    if (!me->first_block)
         return;
 
     /* get 1st block that has a higher offset than us */
 
     prev = NULL;
-    this = prog->first_block;
+    this = me->first_block;
 
     while (this)
     {
@@ -205,9 +209,9 @@ void sc_mark_incomplete(
             }
             else
             {
-                prog->first_block = this->next;
+                me->first_block = this->next;
                 free(this);
-                this = prog->first_block;
+                this = me->first_block;
                 if (!this) break;
             }
         }
@@ -218,15 +222,15 @@ void sc_mark_incomplete(
         else if (this->offset < offset &&
                 offset + len < this->offset + this->len)
         {
-            var_block_t *blk;
+            var_block_t *b;
 
-            blk = malloc(sizeof(var_block_t));
-            blk->offset = offset + len;
-            blk->len = this->len - len - (offset - this->offset);
-            blk->next = this->next;
+            b = malloc(sizeof(var_block_t));
+            b->offset = offset + len;
+            b->len = this->len - len - (offset - this->offset);
+            b->next = this->next;
 
             this->len = offset - this->offset;
-            this->next = blk;
+            this->next = b;
         }
         /*
          * swallow left
@@ -254,88 +258,81 @@ void sc_mark_incomplete(
     }
 }
 
-int sc_is_complete(
-    sparsecounter_t * prog
-)
+int sc_is_complete(const sparsecounter_t * me)
 {
-    var_block_t *block;
+    const var_block_t *b;
 
-    block = prog->first_block;
-
-    return block && !block->next && block->len == prog->max;
+    b = me->first_block;
+    return b && !b->next && b->len == me->max;
 }
 
 /**
  * Get an incompleted block  */
 void sc_get_incomplete(
-    const sparsecounter_t * prog,
+    const sparsecounter_t * me,
     unsigned int *offset,
     unsigned int *len,
     const unsigned int max
 )
 {
-    const var_block_t *block;
+    const var_block_t *b;
 
     *offset = *len = 0;
-    block = prog->first_block;
+    b = me->first_block;
 
-    if (!block)
+    if (!b)
     {
         *offset = 0;
         *len = max;
     }
     else
     {
-        if (block->offset != 0)
+        if (b->offset != 0)
         {
             *offset = 0;
 
-            if (block->next)
+            if (b->next)
             {
-                *len = block->next->offset - block->offset;
+                *len = b->next->offset - b->offset;
             }
             else
             {
-                *len = block->offset;
+                *len = b->offset;
             }
         }
-        else if (!block->next)
+        else if (!b->next)
         {
-            *offset = block->len;
+            *offset = b->len;
             *len = max;
         }
         else
         {
-            *offset = 0 + block->len;
-            *len = block->next->offset - block->len;
+            *offset = 0 + b->len;
+            *len = b->next->offset - b->len;
         }
     }
 
     *len = __capmax(*len, max);
 
-//    printf("%d %d %d %d\n", prog->max, *len, max, *offset + *len);
+//    printf("%d %d %d %d\n", me->max, *len, max, *offset + *len);
 
     /*  make sure we aren't going over the boundary */
-    if (prog->max < *offset + *len)
+    if (me->max < *offset + *len)
     {
-        *len = prog->max - *offset;
+        *len = me->max - *offset;
     }
 }
 
 unsigned int sc_get_nbytes_completed(
-    const sparsecounter_t * prog
+    const sparsecounter_t * me
 )
 {
-    const var_block_t *block;
+    const var_block_t *b;
+    unsigned int nbytes;
 
-    block = prog->first_block;
-
-    unsigned int nbytes = 0;
-
-    while (block)
+    for (b = me->first_block, nbytes=0; b; b = b->next)
     {
-        nbytes += block->len;
-        block = block->next;
+        nbytes += b->len;
     }
 
     return nbytes;
@@ -344,24 +341,22 @@ unsigned int sc_get_nbytes_completed(
 /**
  * @return 1 if we have this block, 0 otherwise */
 int sc_have(
-    sparsecounter_t * prog,
+    const sparsecounter_t * me,
     const unsigned int offset,
     const unsigned int len
 )
 {
-    const var_block_t *block;
+    const var_block_t *b;
 
-    block = prog->first_block;
-
-    while (block)
+    for (b = me->first_block; b; b = b->next)
     {
-        if (offset < block->offset)
+        if (offset < b->offset)
         {
 
         }
-        else if (block->offset <= offset)
+        else if (b->offset <= offset)
         {
-            if (offset + len <= block->offset + block->len)
+            if (offset + len <= b->offset + b->len)
             {
                 return 1;
             }
@@ -370,22 +365,17 @@ int sc_have(
         {
             return 0;
         }
-
-        block = block->next;
     }
 
     return 0;
 }
 
-void sc_print_contents(sparsecounter_t * prog)
+void sc_print_contents(const sparsecounter_t * me)
 {
-    const var_block_t *block;
+    const var_block_t *b;
 
-    block = prog->first_block;
-
-    while (block)
+    for (b = me->first_block; b; b = b->next)
     {
-        printf("%d to %d\n", block->offset, block->offset + block->len);
-        block = block->next;
+        printf("%d to %d\n", b->offset, b->offset + b->len);
     }
 }
