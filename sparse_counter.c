@@ -51,12 +51,10 @@ void sc_free(
     sparsecounter_t *me = ra;
     var_block_t *b, *prev;
 
-    b = me->first_block;
-
-    while (b)
+    for (b = me->first_block; b; )
     {
         prev = b;
-        b = b->next;
+        b=b->next;
         free(prev);
     }
 
