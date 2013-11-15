@@ -23,6 +23,8 @@ void sc_mark_incomplete(
         const unsigned int offset,
         const unsigned int len);
 
+void sc_mark_all_incomplete(sparsecounter_t * me);
+
 int sc_is_complete(
         const sparsecounter_t * prog);
 

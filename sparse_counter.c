@@ -61,6 +61,11 @@ void sc_free(
     free(me);
 }
 
+void sc_mark_all_incomplete(sparsecounter_t * me)
+{
+    sc_mark_incomplete(me,0,me->max);
+}
+
 /**
  * @return number of non-contiginous blocks */
 int sc_get_num_blocks(const sparsecounter_t * me)
