@@ -41,6 +41,8 @@ void *sc_init(const unsigned int max)
     me = calloc(1, sizeof(sparsecounter_t));
     me->max = max;
     me->first_block = NULL;
+
+    assert(me);
     return me;
 }
 
@@ -59,6 +61,13 @@ void sc_free(
     }
 
     free(me);
+}
+
+/**
+ * @param max The amount we are expecting to count to */
+void sc_set_max(sparsecounter_t* me, const unsigned int max)
+{
+    me->max = max;
 }
 
 void sc_mark_all_incomplete(sparsecounter_t * me)
@@ -270,7 +279,7 @@ int sc_is_complete(const sparsecounter_t * me)
 }
 
 /**
- * Get an incompleted block  */
+ * Get an incomplete block  */
 void sc_get_incomplete(
     const sparsecounter_t * me,
     unsigned int *offset,

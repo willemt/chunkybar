@@ -7,6 +7,8 @@ typedef struct {
 void *sc_init(
         const unsigned int max);
 
+void sc_set_max(sparsecounter_t* me, const unsigned int max);
+
 void sc_free(
         void *ra);
 
