@@ -5,7 +5,7 @@ Chunkybar is a data structure which efficiently represents multi-piece progress 
 
 Below is an example of a multi-piece progress bar in uTorrent:
 
-.. image:: http://github.com/willemt/chunkybar/raw/master/doc/Bittorrent_progress_bar.png
+.. figure:: doc/Bittorrent_progress_bar.png
 
 How does it work?
 -----------------
