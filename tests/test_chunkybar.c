@@ -62,13 +62,9 @@ void Test_chunkybar_MarkAddchunkyhunks(
 
     chunky_mark_complete(prog, 20, 10);
 
-//    printf("%d\n", chunky_get_num_chunks(prog));
-
     CuAssertTrue(tc, 2 == chunky_get_num_chunks(prog));
 
     chunky_mark_complete(prog, 40, 10);
-
-//    printf("%d\n", chunky_get_num_chunks(prog));
 
     CuAssertTrue(tc, 3 == chunky_get_num_chunks(prog));
     chunky_free(prog);
