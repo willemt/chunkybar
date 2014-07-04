@@ -1,21 +1,20 @@
 GCOV_OUTPUT = *.gcda *.gcno *.gcov 
 GCOV_CCFLAGS = -fprofile-arcs -ftest-coverage
 CC     = gcc
-CCFLAGS = -g -O2 -Wall -Werror -W -fno-omit-frame-pointer -fno-common -fsigned-char $(GCOV_CCFLAGS)
+CCFLAGS = -I. -Itests -g -O2 -Wall -Werror -fno-omit-frame-pointer -fno-common -fsigned-char $(GCOV_CCFLAGS)
 
-
-all: tests
+all: test
 
 main.c:
-	sh make-tests.sh > main.c
+	sh tests/make-tests.sh tests/test_*.c > main.c
 
-tests: main.c sparse_counter.o test_sparse_counter.c CuTest.c main.c
+test: main.c chunkybar.o tests/test_chunkybar.c tests/CuTest.c main.c
 	$(CC) $(CCFLAGS) -o $@ $^
-	./tests
-	gcov main.c test_sparse_counter.c sparse_counter.c
+	./test
+	gcov main.c chunkbar.c
 
-sparse_counter.o: sparse_counter.c
+chunkybar.o: chunkybar.c
 	$(CC) $(CCFLAGS) -c -o $@ $^
 
 clean:
-	rm -f main.c sparse_counter.o tests $(GCOV_OUTPUT)
+	rm -f main.c chunkybar.o test $(GCOV_OUTPUT)
